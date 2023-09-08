@@ -3,21 +3,34 @@
 #include <Windows.h>
 #include <spdlog/spdlog.h>
 
+HWND targetWindow = nullptr; // The handle of the target window
 int keypressCount = 0;
 DWORD startTime = 0;
 HHOOK keyboardHook = NULL;
 
+// Define a function to check if the window handle matches the target window
+bool IsTargetWindow(HWND hwnd) {
+    // You can implement your own logic here to determine if hwnd is the target window
+    // For example, compare window title, class name, or process ID
+    // Here, we assume you have a valid method to check if hwnd is the target window.
+    return (hwnd == targetWindow);
+}
+
 LRESULT CALLBACK KeyboardHook(int nCode, WPARAM wParam, LPARAM lParam) {
-	if (nCode >= 0) {
-		if (wParam == WM_KEYDOWN) {
-			keypressCount++;
-			if(startTime == 0) {
-				startTime = GetTickCount();
-			}
-		}
-	}
-	
-	return CallNextHookEx(NULL, nCode, wParam, lParam);
+    if (nCode >= 0) {
+        if (wParam == WM_KEYDOWN) {
+            // Check if the keypress events are from the target window
+            HWND activeWindow = GetForegroundWindow();
+            if (IsTargetWindow(activeWindow)) {
+                keypressCount++;
+                if (startTime == 0) {
+                    startTime = GetTickCount();
+                }
+            }
+        }
+    }
+    
+    return CallNextHookEx(NULL, nCode, wParam, lParam);
 }
 
 void MessageLoop() {
@@ -28,18 +41,28 @@ void MessageLoop() {
     }
 }
 
-
 TEST(MyTests, KeyboardHookTest) {
     spdlog::info("Welcome to spdlog!");
+
+    // Set the target window handle here. You should obtain this handle based on your criteria.
+    // Example: targetWindow = FindWindow(nullptr, "Target Window Title");
+    targetWindow = FindWindow(nullptr, "League of Legends (TM) Client");
+
+    if (targetWindow == NULL) {
+        spdlog::error("Failed to find the target window");
+        return;
+    }
+
     keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardHook, NULL, 0);
 
     if (keyboardHook == NULL) {
         spdlog::error("Failed to set up keyboard hook");
+        return;
     }
 
     bool success = false;
-    const int timeoutInSeconds = 10; // Adjust the timeout as needed
-    const int expectedKeyPresses = 5; // Adjust the expected number of keypresses
+    const int timeoutInSeconds = 20; // Adjust the timeout as needed
+    const int expectedKeyPresses = 20; // Adjust the expected number of keypresses
 
     // Start the message loop in the main thread
     MSG msg;
