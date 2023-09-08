@@ -76,6 +76,8 @@ Before you begin, ensure you have met the following requirements:
 ### Main Features
 Actions Per Minute (APM) Measurement: The tool tracks and calculates the number of mouse and keyboard clicks to provide APM statistics, giving insights into user activity and engagement.
 
+Window Focus: The tool actively monitors the specified window (in this case, League of Legends (TM) Client), ensuring that it accurately tracks actions within that window.
+
 ### Roadmap for Future Features
 Enhanced User Interface: Improve the console user interface or develop a graphical user interface (GUI) to enhance user experience and provide a more intuitive way to interact with the tool.
 
