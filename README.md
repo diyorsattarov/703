@@ -60,7 +60,7 @@ That's it! You now have cpp-apm up and running on your local Windows machine. Yo
 Before you begin, ensure you have met the following requirements:
 
 - [CMake](https://cmake.org/) installed on your system.
-- A C++ compiler that supports at least C++11.
+- A C++ compiler that supports at least C++14.
 - [Google Test (GTest)](https://github.com/google/googletest) library for running unit tests.
 - [SPDLOG](https://github.com/gabime/spdlog) library for logging.
 - Windows operating system (the project is designed to run on Windows).
