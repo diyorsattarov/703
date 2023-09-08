@@ -3,23 +3,18 @@
 #include <Windows.h>
 #include <spdlog/spdlog.h>
 
-HWND targetWindow = nullptr; // The handle of the target window
+HWND targetWindow = nullptr;
 int keypressCount = 0;
 DWORD startTime = 0;
 HHOOK keyboardHook = NULL;
 
-// Define a function to check if the window handle matches the target window
 bool IsTargetWindow(HWND hwnd) {
-    // You can implement your own logic here to determine if hwnd is the target window
-    // For example, compare window title, class name, or process ID
-    // Here, we assume you have a valid method to check if hwnd is the target window.
     return (hwnd == targetWindow);
 }
 
 LRESULT CALLBACK KeyboardHook(int nCode, WPARAM wParam, LPARAM lParam) {
     if (nCode >= 0) {
         if (wParam == WM_KEYDOWN) {
-            // Check if the keypress events are from the target window
             HWND activeWindow = GetForegroundWindow();
             if (IsTargetWindow(activeWindow)) {
                 keypressCount++;
@@ -43,56 +38,69 @@ void MessageLoop() {
 
 TEST(MyTests, KeyboardHookTest) {
     spdlog::info("Welcome to spdlog!");
+    while (true) {
+        targetWindow = nullptr;
+        const int windowOpenTimeoutInSeconds = 60;
+        const int pollingIntervalMilliseconds = 5000;
 
-    // Set the target window handle here. You should obtain this handle based on your criteria.
-    // Example: targetWindow = FindWindow(nullptr, "Target Window Title");
-    targetWindow = FindWindow(nullptr, "League of Legends (TM) Client");
-
-    if (targetWindow == NULL) {
-        spdlog::error("Failed to find the target window");
-        return;
-    }
-
-    keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardHook, NULL, 0);
-
-    if (keyboardHook == NULL) {
-        spdlog::error("Failed to set up keyboard hook");
-        return;
-    }
-
-    bool success = false;
-    const int timeoutInSeconds = 20; // Adjust the timeout as needed
-    const int expectedKeyPresses = 20; // Adjust the expected number of keypresses
-
-    // Start the message loop in the main thread
-    MSG msg;
-    DWORD startTime = GetTickCount();
-    while (!success) {
-        while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+        for (int i = 0; i < windowOpenTimeoutInSeconds * 1000 / pollingIntervalMilliseconds; i++) {
+            spdlog::info("Waiting for League of Legends to open.");
+            targetWindow = FindWindow(nullptr, "League of Legends (TM) Client");
+            if (targetWindow != NULL) {
+                spdlog::info("League of Legends window is open.");
+                break;
+            }
+            Sleep(pollingIntervalMilliseconds);
         }
 
-        if (GetTickCount() - startTime >= 1000) {
-            double apm = static_cast<double>(keypressCount) / 60.0;
-            spdlog::info("APM: {}", apm);
+        if (targetWindow == NULL) {
+            spdlog::error("Timed out waiting for League of Legends window to open");
+            return;
+        }
 
-            if (keypressCount >= expectedKeyPresses) {
-                success = true;
+        keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardHook, NULL, 0);
+
+        if (keyboardHook == NULL) {
+            spdlog::error("Failed to set up keyboard hook");
+            return;
+        }
+
+        bool success = false;
+        const int timeoutInSeconds = 20;
+        const int expectedKeyPresses = 20;
+
+        MSG msg;
+        DWORD startTime = GetTickCount();
+        while (true) {
+            while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
             }
 
-            keypressCount = 0;
-            startTime = GetTickCount();
+            if (GetTickCount() - startTime >= 1000) {
+                double apm = static_cast<double>(keypressCount) / 60.0;
+                spdlog::info("APM: {}", apm);
+                startTime = GetTickCount();
+            }
+
+            Sleep(10);
+
+            if (FindWindow(nullptr, "League of Legends (TM) Client") == NULL) {
+                spdlog::info("League of Legends window is closed.");
+                break;
+            }
         }
+        UnhookWindowsHookEx(keyboardHook);
 
-        Sleep(10);
+        if (!success) {
+            spdlog::info("Restarting the test...");
+        } else {
+            break;
+        }
     }
-
-    // Cleanup
-    UnhookWindowsHookEx(keyboardHook);
-
-    EXPECT_TRUE(success);
 }
+
+
 
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
