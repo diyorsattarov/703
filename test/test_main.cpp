@@ -42,12 +42,14 @@ TEST(MyTests, KeyboardHookTest) {
         targetWindow = nullptr;
         const int windowOpenTimeoutInSeconds = 60;
         const int pollingIntervalMilliseconds = 5000;
+        DWORD windowOpenTime = 0; // Track the time when the window opens
 
         for (int i = 0; i < windowOpenTimeoutInSeconds * 1000 / pollingIntervalMilliseconds; i++) {
             spdlog::info("Waiting for League of Legends to open.");
             targetWindow = FindWindow(nullptr, "League of Legends (TM) Client");
             if (targetWindow != NULL) {
                 spdlog::info("League of Legends window is open.");
+                windowOpenTime = GetTickCount();
                 break;
             }
             Sleep(pollingIntervalMilliseconds);
@@ -67,19 +69,26 @@ TEST(MyTests, KeyboardHookTest) {
 
         bool success = false;
         const int timeoutInSeconds = 20;
-        const int expectedKeyPresses = 20;
+        DWORD startTime = 0;
+        double apm = 0;
 
         MSG msg;
-        DWORD startTime = GetTickCount();
         while (true) {
             while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
                 TranslateMessage(&msg);
                 DispatchMessage(&msg);
             }
 
-            if (GetTickCount() - startTime >= 1000) {
-                double apm = static_cast<double>(keypressCount) / 60.0;
-                spdlog::info("APM: {}", apm);
+            if (windowOpenTime != 0) {
+                // Calculate time elapsed in seconds
+                double timeElapsed = (GetTickCount() - windowOpenTime) / 1000.0;
+                if (timeElapsed > 0) {
+                    apm = (keypressCount / timeElapsed) * 60;
+                }
+            }
+
+            if (GetTickCount() - startTime >= 2000) {
+                spdlog::info("APM: {:.2f} Keypress Count: {}", apm, keypressCount);
                 startTime = GetTickCount();
             }
 
@@ -94,11 +103,15 @@ TEST(MyTests, KeyboardHookTest) {
 
         if (!success) {
             spdlog::info("Restarting the test...");
+            keypressCount = 0;
+            windowOpenTime = 0;
+            apm = 0;
         } else {
             break;
         }
     }
 }
+
 
 
 
