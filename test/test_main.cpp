@@ -40,24 +40,15 @@ TEST(MyTests, KeyboardHookTest) {
     spdlog::info("Welcome to spdlog!");
     while (true) {
         targetWindow = nullptr;
-        const int windowOpenTimeoutInSeconds = 60;
-        const int pollingIntervalMilliseconds = 5000;
-        DWORD windowOpenTime = 0; // Track the time when the window opens
 
-        for (int i = 0; i < windowOpenTimeoutInSeconds * 1000 / pollingIntervalMilliseconds; i++) {
+        while (true) {
             spdlog::info("Waiting for League of Legends to open.");
             targetWindow = FindWindow(nullptr, "League of Legends (TM) Client");
             if (targetWindow != NULL) {
                 spdlog::info("League of Legends window is open.");
-                windowOpenTime = GetTickCount();
                 break;
             }
-            Sleep(pollingIntervalMilliseconds);
-        }
-
-        if (targetWindow == NULL) {
-            spdlog::error("Timed out waiting for League of Legends window to open");
-            return;
+            Sleep(5000);  // Polling every 5 seconds
         }
 
         keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardHook, NULL, 0);
@@ -67,9 +58,7 @@ TEST(MyTests, KeyboardHookTest) {
             return;
         }
 
-        bool success = false;
-        const int timeoutInSeconds = 20;
-        DWORD startTime = 0;
+        DWORD startTime = GetTickCount();
         double apm = 0;
 
         MSG msg;
@@ -79,12 +68,10 @@ TEST(MyTests, KeyboardHookTest) {
                 DispatchMessage(&msg);
             }
 
-            if (windowOpenTime != 0) {
-                // Calculate time elapsed in seconds
-                double timeElapsed = (GetTickCount() - windowOpenTime) / 1000.0;
-                if (timeElapsed > 0) {
-                    apm = (keypressCount / timeElapsed) * 60;
-                }
+            // Calculate time elapsed in seconds
+            double timeElapsed = (GetTickCount() - startTime) / 1000.0;
+            if (timeElapsed > 0) {
+                apm = (keypressCount / timeElapsed) * 60;
             }
 
             if (GetTickCount() - startTime >= 2000) {
@@ -100,20 +87,8 @@ TEST(MyTests, KeyboardHookTest) {
             }
         }
         UnhookWindowsHookEx(keyboardHook);
-
-        if (!success) {
-            spdlog::info("Restarting the test...");
-            keypressCount = 0;
-            windowOpenTime = 0;
-            apm = 0;
-        } else {
-            break;
-        }
     }
 }
-
-
-
 
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
