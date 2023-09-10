@@ -81,8 +81,6 @@ Window Focus: The tool actively monitors the specified window (in this case, Lea
 ### Roadmap for Future Features
 Enhanced User Interface: Improve the console user interface or develop a graphical user interface (GUI) to enhance user experience and provide a more intuitive way to interact with the tool.
 
-Window Focus: Implement the ability to set rules that allow users to focus the APM tool on specific windows or applications, providing more targeted APM tracking.
-
 ## Contributing
 
 Explain how others can contribute to your project. Include guidelines for submitting pull requests or reporting issues.
