@@ -2,7 +2,15 @@ cmake_minimum_required(VERSION 3.2)
 
 project(cpp-cmake-template VERSION 0.01)
 
-add_subdirectory(test)
+# Define an option for building tests (default is ON)
+option(BUILD_TESTS "Build the tests" ON)
+
+# Add subdirectories based on the BUILD_TESTS option
+if(BUILD_TESTS)
+    add_subdirectory(test)
+else()
+    add_subdirectory(src)
+endif()
 
 add_custom_target(clean_all
     COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/CMakeFiles
@@ -12,4 +20,4 @@ add_custom_target(clean_all
     COMMENT "Cleaning build files in root directory"
 )
 
-add_dependencies(clean_all clean_test)  # Add this line to ensure clean_test is executed before clean_root
+#add_dependencies(clean_all clean_test)  # Add this line to ensure clean_test is executed before clean_root
